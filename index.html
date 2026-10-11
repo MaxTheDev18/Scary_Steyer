@@ -102,7 +102,7 @@ put('bat',0,{g:0});put('bat',0,{g:0});put('bat',1,{g:3});put('bat',1,{g:3});put(
 put('brk',1,{g:2});put('brk',0,{g:5});put('term',1,{g:9});put('key',2,{g:6});
 for(let f=0;f<NF-1;f++){const p=take(f,c=>c[0]>=2),q=take(f+1,c=>c[0]>=2);o.push({t:'st',f,d:1,x:p.x,y:p.y,n:0});o.push({t:'st',f:f+1,d:-1,x:p.x,y:p.y,n:0})}
 const tb={t:'bat',f:3,x:600,y:360,n:0,g:-1,tut:1},tl={t:'lock',f:3,x:900,y:200,n:0};o.push(tb,tl);o.push({t:'pad',f:0,x:620,y:46,n:0});
-G={o,B,fl:3,ex:[0,1,2,3].map(()=>new Uint8Array(GW*GH)),map:0,p:{x:160,y:360,r:12,s:100,hid:null,a:Math.PI/2,dir:'down',wt:0,moving:false,tired:0},ss:VAR.map((v,i)=>({v,x:2600,y:1400,r:v.r||15,mode:'patrol',tx:2000,ty:1000,pt:0,next:null,lost:9,chk:0,say:'',sayT:0,arr:0,at:null,al:0,on:i==0?1:0})),stage:0,dl:'',dt:0,bat:0,got:0,key:0,clk:0,tut:0,tv:0,ts:0,tb,tl,hid:0,chaseT:0,t:0,msg:'Welcome to the Joule Facility. Follow the tutorial.',mt:5,done:{},beat:0,toast:'',tt:0,fs:0,al:0,dg:0,kp:null,sc:null}}
+G={o,B,fl:3,ex:[0,1,2,3].map(()=>new Uint8Array(GW*GH)),map:0,p:{x:160,y:360,r:12,s:100,hid:null,a:Math.PI/2,dir:'down',wt:0,moving:false,tired:0},ss:VAR.map((v,i)=>({v,x:2600,y:1400,r:v.r||15,mode:'patrol',tx:2000,ty:1000,pt:0,next:null,lost:9,chk:0,say:'',sayT:0,arr:0,at:null,al:0,on:i==0?1:0})),stage:0,dl:'',dt:0,bat:0,got:0,key:0,clk:0,tut:0,tv:0,ts:0,tb,tl,hid:0,chaseT:0,t:0,msg:'Welcome to the Joule Facility. Follow the tutorial.',mt:5,done:{},beat:0,toast:'',tt:0,fs:0,al:0,dg:0,kp:null,sc:null,calm:0}}
 const say=(t,s=3)=>{G.msg=t;G.mt=s};
 function alertOne(s,x,y){if(s.arr<=0&&s.mode!='chase'){s.tx=x;s.ty=y;s.mode='patrol';s.lost=9}}
 const alertS=(x,y)=>G.ss.forEach(s=>alertOne(s,x,y));
@@ -155,6 +155,8 @@ if(!fz)for(const s of G.ss){const v=s.v;
   if(s.next){const sv=(ch?v.cv+gens*12:v.pv+gens*6)*dt,a=Math.atan2(s.next.y-s.y,s.next.x-s.x);move(s,Math.cos(a)*sv,Math.sin(a)*sv)}}
  s.sayT-=dt;
  if(p.hid){if(dd<62)s.chk+=dt*v.chk;else s.chk=Math.max(0,s.chk-dt);if(s.chk>2.2){die(s);break}}else if(dd<v.kill){die(s);break}}
+if(!fz&&G.fl!=3){if(G.ss.some(s=>s.on&&s.arr<=0&&s.mode=='chase'))G.calm=0;else G.calm+=dt;
+ if(G.calm>=120){G.calm=0;const av=G.ss.filter(s=>s.on);if(av.length)spawnNear(av[rnd(0,av.length)|0])}}
 const dg=fz||d>=9999?0:cl(1-d/520,0,1);G.dg=dg;G.beat-=dt;if(G.beat<=0){G.beat=1.1-.7*dg;tone(55,.15,'sine',.25*(.3+dg));setTimeout(()=>tone(48,.18,'sine',.2),160)}
 G.mt-=dt;G.tt-=dt;if(G.kp&&G.kp.mt>0)G.kp.mt-=dt;
 G.dt-=dt;if(G.tut>=TUT.length&&G.stage<STG.length-1){const r=STG[G.stage][3]();if(r[0]>=r[1]){G.toast='OBJECTIVE COMPLETE: '+STG[G.stage][0];G.tt=3;tone(520,.25,'triangle',.1,780);G.stage++;startStage()}}}
@@ -171,6 +173,10 @@ function drawPad(){const k=G.kp,x=W/2-110,y=H/2-170;X.fillStyle='rgba(0,0,0,.88)
  const lb=['1','2','3','4','5','6','7','8','9','DEL','0','EXIT'];
  for(let i=0;i<12;i++){if(!lb[i])continue;const bx=x+20+(i%3)*62,by=y+90+(i/3|0)*58;X.fillStyle='#444';X.fillRect(bx,by,56,50);X.fillStyle='#ddd';X.font=(lb[i].length>1?'bold 14px':'bold 22px')+' Courier New';X.fillText(lb[i],bx+28,by+32)}
  X.fillStyle='#aaa';X.font='12px Courier New';X.fillText(tx('Type or tap the code  ·  Backspace: delete  ·  E: step away','Tap the keys to enter the code'),W/2,y+362)}
+function spawnNear(s){const p=G.p,cm=cam();let q,n=0,ok=false;
+ do{const a=rnd(0,Math.PI*2),r=rnd(480,750);q={x:p.x+Math.cos(a)*r,y:p.y+Math.sin(a)*r};n++;
+  ok=q.x>0&&q.y>0&&q.x<WD&&q.y<HT&&!solid(q.x,q.y)&&(q.x<cm.x-30||q.x>cm.x+W+30||q.y<cm.y-30||q.y>cm.y+H+30)&&!!step(q,p)}while(!ok&&n<80);
+ if(!ok)return;s.x=q.x;s.y=q.y;s.arr=0;s.at=null;s.mode='patrol';s.lost=9;s.tx=p.x;s.ty=p.y;s.next=null;s.pt=0;s.chk=0;noise(.3,.05);tone(80,.6,'sine',.08,50)}
 function die(s){G.k=s.v;st='dead';deadT=0;noise(1.3,.5);tone(90,1.2,'sawtooth',.3,20)}
 const cam=()=>({x:cl(G.p.x-W/2,0,WD-W),y:cl(G.p.y-H/2,0,HT-H)});
 function ST(c,x,y,k,sc,tn){c.save();c.translate(x,y);
